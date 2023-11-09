@@ -1,0 +1,127 @@
+managed;
+//strict ( 2 );
+
+define behavior for z_i_travel_1940 alias Travel
+implementation in class zbp_i_travel_1940 unique
+persistent table ztravel_1940
+lock master
+authorization master ( instance )
+etag master LastChangedAt
+{
+  //Campos administrados, los siguientes campos se definen para que sean solo lectura
+  field ( readonly ) LastChangedAt, LastChangedBy, CreatedAt, CreatedBy;
+  //Campos obligatorios
+  field ( mandatory ) AgencyId, OverallStatus, BookingFee, CurrencyCode;
+  //  Control de campos dinámicos. Está lógica se tratará en la clase de la instancia
+  field ( features : instance ) TravelId, OverallStatus ;
+
+  // El framework se encargaría automáticamente de asignar el valor numérico
+  // para ello el campo debería ser del tipo ABP_BEHV_PID
+  // En este caso no es necesario porque se va a realizar en la lógica de la clase anterior
+  // mediante el control de campos dinámicos
+  //  =====> field(numbering : managed) TravelId; <=====
+
+  create;
+  update;
+  delete;
+
+  //  *** Validaciones ***
+  // Se define la validación al guardar, los campos implicados en dicha validación
+  // se indican con la palabra reservada "field". Esta validación se realizará en la clase de
+  // implementación de la entiedad. Las validaciones no modifican datos solo rechazan el almacenamiento
+  validation validateCustomer on save { field CustomerId; }
+  validation validateDates on save { field BeginDate, EndDate; }
+  validation validateStatus on save { field OverallStatus; }
+
+  //  *** Acciones ***
+  // Se indican los parámetros de salida, en la que se indican los parámetros de salida con la cardinalidad
+  // en este caso 1, $self indica que se trata de esta misma instancia. También se puede indicar con ( features : instance )
+  action ( features : instance ) acceptTravel result [1] $self;
+  action ( features : instance ) rejectTravel result [1] $self;
+
+  // Si no esta vinculada con la instancia se puede indicar como static
+  action createTravelByTemplate result [1] $self;
+
+  association _Booking { create; }
+
+  // Para diferenciar las columnas de las capas de persistencia y los nombres de los elementos que proyectamos en los CDS
+  // Esto se realizara mediante la sentencia mapping. Si los campos se llaman igual en la tabla de persistencia que en la CDS
+  // de proyeccción podemos indicar corresponding, en caso contrario indicar la correspondencia de la siguiente forma:  { field1 : field2 }
+  //  mapping
+  //       for ztravel_1940 corresponding;
+  mapping for ztravel_1940
+    {
+
+      //Si los nombres son iguales añadir corresponding, no sería necesario este mapeo
+      AgencyId      = agency_id;
+      BeginDate     = begin_date;
+      BookingFee    = booking_fee;
+      CreatedAt     = created_at;
+      CreatedBy     = created_by;
+      CurrencyCode  = currency_code;
+      CustomerId    = customer_id;
+      Description   = description;
+      EndDate       = end_date;
+      LastChangedAt = last_changed_at;
+      LastChangedBy = last_changed_by;
+      OverallStatus = overall_status;
+      TotalPrice    = total_price;
+      TravelId      = travel_id;
+    }
+}
+
+define behavior for z_i_booking_1940 alias Booking
+implementation in class zbp_i_booking_1940 unique
+persistent table zbooking_1940
+lock dependent by _Travel
+authorization dependent by _Travel
+etag master LastChangeAt
+{
+  //Campos obligatorios
+  field ( mandatory ) CarrierId, ConnectionId, FlightDate, BookingStatus;
+  //Campos solo lectura
+  field ( readonly ) TravelId;
+
+  update;
+  delete;
+
+  //  *** Validaciones ***
+  validation validateStatus on save { field BookingStatus; }
+
+
+  // Determinaciones Son funciones que se ejecutan en el momento de la modificación o guardado de los datos
+  determination calculateTotalFlightPrice on modify { field FlightPrice, CurrencyCode; }
+
+  association _Travel;
+  association _BookingSupplement { create; }
+
+  mapping
+       for zbooking_1940 corresponding;
+    }
+
+
+  define behavior for z_i_booksuppl_log_1940 alias Supplement
+  implementation in class zbp_i_booksuppl_log_1940 unique
+  with unmanaged save
+  //persistent table
+  lock dependent by _Travel
+  authorization dependent by _Travel
+  etag master LastChangedAt
+  {
+    //Campos obligatorios
+    field ( mandatory ) SupplementId, Price;
+    //Campos solo lectura
+    field ( readonly ) TravelId, BookingId;
+
+    update;
+    delete;
+
+    // Determinaciones Son funciones que se ejecutan en el momento de la modificación o guardado de los datos
+    determination calculateTotalSupplPrice on modify { field Price, CurrencyCode; }
+
+    association _Travel;
+    association _Booking;
+
+    mapping
+         for zlog_1940 corresponding;
+      }
