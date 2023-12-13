@@ -13,7 +13,7 @@ define view entity z_c_booksuppl_log_1940
       Price,
       @Semantics.currencyCode: true
       CurrencyCode,
-      LastChangedAt              as LastChangedAt,
+      LastChangedAt,
       /* Associations */
       _Travel  : redirected to z_c_travel_1940,
       _Booking : redirected to parent z_c_booking_1940,

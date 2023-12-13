@@ -9,6 +9,15 @@ ENDCLASS.
 CLASS lhc_Supplement IMPLEMENTATION.
 
   METHOD calculateTotalSupplPrice.
+
+    IF keys IS NOT INITIAL.
+      " Se llama al método de la clase auxiliar creada previamente
+      " Se recoore la tabla interna KEYS agrupando la información por el TravelId
+      zcl_aux_travel_det_1940=>calculate_price( it_travel_id =
+                                        VALUE #( FOR GROUPS <fs_booking_suppl> OF booking_key IN keys
+                                                     GROUP BY booking_key-TravelId WITHOUT MEMBERS ( <fs_booking_suppl> )  )  ).
+    ENDIF.
+
   ENDMETHOD.
 
 ENDCLASS.

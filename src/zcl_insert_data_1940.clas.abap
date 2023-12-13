@@ -12,7 +12,7 @@ ENDCLASS.
 
 
 
-CLASS zcl_insert_data_1940 IMPLEMENTATION.
+CLASS ZCL_INSERT_DATA_1940 IMPLEMENTATION.
 
 
   METHOD if_oo_adt_classrun~main.
