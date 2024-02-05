@@ -12,7 +12,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_INSERT_DATA_1940 IMPLEMENTATION.
+CLASS zcl_insert_data_1940 IMPLEMENTATION.
 
 
   METHOD if_oo_adt_classrun~main.
@@ -42,7 +42,8 @@ CLASS ZCL_INSERT_DATA_1940 IMPLEMENTATION.
         WHERE travel_id EQ @lt_travel-travel_id
         INTO CORRESPONDING FIELDS OF TABLE @lt_booking.
 
-    SELECT * FROM /dmo/book_suppl
+    SELECT *
+        FROM /dmo/book_suppl
         FOR ALL ENTRIES IN @lt_booking
         WHERE   travel_id   EQ @lt_booking-travel_id
             AND booking_id  EQ @lt_booking-booking_id

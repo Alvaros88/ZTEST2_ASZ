@@ -31,7 +31,8 @@ CLASS zcl_aux_travel_det_1940 IMPLEMENTATION.
 
     READ ENTITIES OF z_i_travel_1940
         ENTITY Travel
-        FROM VALUE #( FOR ls_travel_id IN it_travel_id ( TravelId = ls_travel_id ) )
+        FIELDS ( TravelId CurrencyCode )
+        WITH VALUE #( FOR ls_travel_id IN it_travel_id ( TravelId = ls_travel_id ) )
         RESULT DATA(lt_read_travel).
 
     " Se leen las reservas que tienen que ver con el/los viajes recuperados

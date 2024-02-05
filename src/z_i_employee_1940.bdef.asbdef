@@ -1,0 +1,18 @@
+managed implementation in class zbp_i_employee_1940 unique;
+//strict ( 2 );
+with draft;
+
+define behavior for Z_I_EMPLOYEE_1940 alias Employee
+persistent table zemployee_1940
+draft table zemployee_1940_d
+lock master
+total etag lchg_date_time
+etag master lchg_date_time
+{
+// Con esto indicamos que el campo e_number es de solo lectura
+// y la numeración es administrada por el framework (numbering : managed)
+  field ( readonly, numbering : managed ) e_number;
+  create;
+  update;
+  delete;
+}

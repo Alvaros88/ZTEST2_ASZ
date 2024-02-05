@@ -47,7 +47,7 @@ CLASS lhc_Travel IMPLEMENTATION.
 
     " Si es mi usuario personal, permitimos, en caso contrario no está autorizado
     "  CB9980008597
-    DATA(lv_auth) = COND #( WHEN cl_abap_context_info=>get_user_technical_name( ) EQ 'CB9980008597'
+    DATA(lv_auth) = COND #( WHEN cl_abap_context_info=>get_user_technical_name( ) EQ 'CB9980005806' "'CB9980008597'
                             THEN if_abap_behv=>auth-allowed
                             ELSE if_abap_behv=>auth-unauthorized ).
 
@@ -391,8 +391,9 @@ CLASS lsc_Z_I_TRAVEL_1940 IMPLEMENTATION.
 
   METHOD save_modified.
 
-    DATA: lt_travel_log        TYPE STANDARD TABLE OF zlog_1940,
-          lt_travel_log_update TYPE STANDARD TABLE OF zlog_1940.
+    DATA: lt_travel_log        TYPE STANDARD TABLE OF zlog_1940, "z_i_log_1940, "zlog_1940,
+          ls_travel_log        TYPE zlog_1940,
+          lt_travel_log_update TYPE STANDARD TABLE OF zlog_1940. "z_i_log_1940. " zlog_1940.
 
     DATA(lv_user) = cl_abap_context_info=>get_user_technical_name( ).
 
@@ -436,31 +437,42 @@ CLASS lsc_Z_I_TRAVEL_1940 IMPLEMENTATION.
 
     IF update-travel IS NOT INITIAL.
       " Si la entidad no es inicial, significa que se ha actualizado un viaje
-      lt_travel_log = CORRESPONDING #( update-travel ).
+*      lt_travel_log = CORRESPONDING #( update-travel ).
+
+      LOOP AT update-travel ASSIGNING FIELD-SYMBOL(<fs_travel>).
+        " No funciona la sentencia de arriba (corresponding), ya que los campos no se llaman iguales
+        CLEAR: ls_travel_log.
+        ls_travel_log-travel_id = <fs_travel>-TravelId.
+        APPEND ls_travel_log TO lt_travel_log.
+      ENDLOOP.
+
 
       " Recomendable siempre realizar la lectura de los valores de entrada en una estructura, en lugar de field-symbols
       " para evitar hacer modificaciones no deseadas sobre los parámetros de entrada
       LOOP AT update-travel INTO DATA(ls_update_travel).
 
-        ASSIGN lt_travel_log[ travel_id = ls_update_travel-TravelId ] TO FIELD-SYMBOL(<fs_travel_log_bd>).
+*        ASSIGN lt_travel_log[ travel_id = ls_update_travel-TravelId ] TO FIELD-SYMBOL(<fs_travel_log_bd>).
+        LOOP AT lt_travel_log ASSIGNING FIELD-SYMBOL(<fs_travel_log_bd>) WHERE travel_id EQ ls_update_travel-TravelId .
 
-        GET TIME STAMP FIELD <fs_travel_log_bd>-createdat.
-        <fs_travel_log>-changing_operation = lsc_z_i_travel_1940=>update.
+          GET TIME STAMP FIELD <fs_travel_log_bd>-createdat.
+          <fs_travel_log_bd>-changing_operation = lsc_z_i_travel_1940=>update.
 
-        " En este punto de la lógica se añaden todos los campos que se deseen añadir para tener el log de modificaciones en la tabla Z
-        " a nivel de auditoria
-        IF ls_update_travel-%control-CustomerId EQ cl_abap_behv=>flag_changed.
-          <fs_travel_log_bd>-change_field_name   = 'customer_id'.
-          <fs_travel_log_bd>-change_field_value  = ls_update_travel-CustomerId.
-          <fs_travel_log_bd>-user_mod            = lv_user.
-          TRY.
-              <fs_travel_log_bd>-change_id           = cl_system_uuid=>create_uuid_x16_static( ).
-            CATCH cx_uuid_error.
-          ENDTRY.
+          " En este punto de la lógica se añaden todos los campos que se deseen añadir para tener el log de modificaciones en la tabla Z
+          " a nivel de auditoria
+          IF ls_update_travel-%control-CustomerId EQ cl_abap_behv=>flag_changed.
+            <fs_travel_log_bd>-change_field_name   = 'customer_id'.
+            <fs_travel_log_bd>-change_field_value  = ls_update_travel-CustomerId.
+            <fs_travel_log_bd>-user_mod            = lv_user.
+            TRY.
+                <fs_travel_log_bd>-change_id           = cl_system_uuid=>create_uuid_x16_static( ).
+              CATCH cx_uuid_error.
+            ENDTRY.
 
-          APPEND <fs_travel_log_bd> TO lt_travel_log_update.
+            APPEND <fs_travel_log_bd> TO lt_travel_log_update.
 
-        ENDIF.
+          ENDIF.
+
+        ENDLOOP.
 
       ENDLOOP.
 
